@@ -1,0 +1,7 @@
+GET http://localhost:3000/todos
+
+###
+GET http://localhost:3000/todos/661ed0f8cfcf79292b7b2daa
+
+###
+GET http://localhost:3000/todos/666
