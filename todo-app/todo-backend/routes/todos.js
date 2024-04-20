@@ -20,27 +20,51 @@ router.post('/', async (req, res) => {
 const singleRouter = express.Router();
 
 const findByIdMiddleware = async (req, res, next) => {
-  const { id } = req.params
-  req.todo = await Todo.findById(id)
-  if (!req.todo) return res.sendStatus(404)
-
-  next()
-}
+  const { id } = req.params;
+  try {
+    const todo = await Todo.findById(id);
+    if (!todo) {
+      return res.sendStatus(404);
+    }
+    req.todo = todo;
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'CastError' && error.kind === 'ObjectId') {
+      return res.sendStatus(400); // Bad Request for invalid ObjectId
+    }
+    return res.sendStatus(500);
+  }
+  next();
+};
 
 /* DELETE todo. */
 singleRouter.delete('/', async (req, res) => {
-  await req.todo.delete()  
-  res.sendStatus(200);
+  try {
+    await req.todo.delete();
+    res.status(200).json({ message: 'Todo deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting todo' });
+  }
 });
 
 /* GET todo. */
 singleRouter.get('/', async (req, res) => {
-  res.sendStatus(405); // Implement this
+  res.status(200).send(req.todo);
 });
 
 /* PUT todo. */
 singleRouter.put('/', async (req, res) => {
-  res.sendStatus(405); // Implement this
+  const done = req.body.done
+  if (done === undefined || typeof done !== 'boolean') return res.sendStatus(400);
+  try {
+    req.todo.done = done;
+    await req.todo.save();
+    res.status(200).json({ message: 'Todo updated successfully' });
+  } catch (error) { 
+    console.error(error);
+    res.status(500).json({ message: 'Error updating todo' });
+  }
 });
 
 router.use('/:id', findByIdMiddleware, singleRouter)
